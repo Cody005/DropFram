@@ -1,0 +1,13 @@
+.DS_Store
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+Project Backups/
+companion-server/.venv/
+companion-server/.env
+companion-server/__pycache__/
+*.pyc
+Frameworks/
+DropFrame/Resources/python-packages/*
+!DropFrame/Resources/python-packages/cacert.pem
