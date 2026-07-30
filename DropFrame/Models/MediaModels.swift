@@ -117,7 +117,7 @@ struct LibraryVideo: Identifiable, Codable, Hashable, Sendable {
     let localFilename: String
     let localPath: String?
     let thumbnailURL: URL?
-    let folderID: UUID
+    var folderID: UUID
     let formatLabel: String
     var fileSize: Int64
     let pixelWidth: Int?
@@ -234,6 +234,7 @@ enum DropFrameError: LocalizedError {
     case invalidMediaFile
     case downloadEngineRejected(String)
     case deleteFailed
+    case moveFailed
 
     var errorDescription: String? {
         switch self {
@@ -263,6 +264,8 @@ enum DropFrameError: LocalizedError {
             "The download engine couldn’t prepare this quality: \(detail)"
         case .deleteFailed:
             "DropFrame couldn’t delete that video from the device."
+        case .moveFailed:
+            "DropFrame couldn’t move that video to the selected folder."
         }
     }
 }

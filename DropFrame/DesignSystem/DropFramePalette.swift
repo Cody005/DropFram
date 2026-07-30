@@ -2,9 +2,6 @@ import SwiftUI
 
 enum DropFramePalette {
     static let canvas = Color(hex: "F5F8FF")
-    static let libraryCanvas = Color(hex: "F0ECFF")
-    static let downloadsCanvas = Color(hex: "E8F8F0")
-    static let settingsCanvas = Color(hex: "FFF0E9")
     static let ink = Color(hex: "172642")
     static let night = Color(hex: "091A33")
     static let paper = Color(hex: "FFFEFB")
@@ -15,6 +12,55 @@ enum DropFramePalette {
     static let violet = Color(hex: "9A73FF")
     static let muted = Color(hex: "6E7890")
     static let hairline = Color(hex: "284269").opacity(0.14)
+}
+
+enum DropFramePageTheme {
+    case library
+    case downloads
+    case settings
+
+    fileprivate var background: Color {
+        switch self {
+        case .library:
+            Color(hex: "FF665B")
+        case .downloads:
+            Color(hex: "4775D1")
+        case .settings:
+            Color(hex: "916AF2")
+        }
+    }
+
+    fileprivate var motif: Color {
+        switch self {
+        case .library:
+            DropFramePalette.cobalt
+        case .downloads:
+            DropFramePalette.signal
+        case .settings:
+            DropFramePalette.signal
+        }
+    }
+}
+
+struct DropFramePageCanvas: View {
+    let theme: DropFramePageTheme
+
+    var body: some View {
+        theme.background
+        .overlay(alignment: .topTrailing) {
+            Circle()
+                .stroke(theme.motif.opacity(0.15), lineWidth: 30)
+                .frame(width: 210, height: 210)
+                .offset(x: 74, y: -92)
+        }
+        .overlay(alignment: .bottomLeading) {
+            Capsule()
+                .fill(theme.motif.opacity(0.13))
+                .frame(width: 190, height: 38)
+                .rotationEffect(.degrees(-13))
+                .offset(x: -52, y: -28)
+        }
+    }
 }
 
 extension Color {
@@ -46,15 +92,21 @@ struct DropFrameHeader: View {
     let title: String
     let trailingSymbol: String?
     var action: (() -> Void)?
+    var foreground: Color = DropFramePalette.ink
+    var eyebrowColor: Color?
+    var actionBackground: Color = DropFramePalette.paper
 
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 5) {
-                EditorialLabel(text: eyebrow)
+                EditorialLabel(
+                    text: eyebrow,
+                    color: eyebrowColor ?? foreground.opacity(0.62)
+                )
                 Text(title)
                     .font(.system(size: 34, weight: .black, design: .rounded))
                     .tracking(-1.4)
-                    .foregroundStyle(DropFramePalette.ink)
+                    .foregroundStyle(foreground)
             }
             Spacer()
             if let trailingSymbol, let action {
@@ -63,7 +115,7 @@ struct DropFrameHeader: View {
                         .font(.system(size: 16, weight: .bold))
                         .frame(width: 44, height: 44)
                         .foregroundStyle(DropFramePalette.ink)
-                        .background(DropFramePalette.paper, in: .rect(cornerRadius: 14))
+                        .background(actionBackground, in: .rect(cornerRadius: 14))
                         .overlay {
                             RoundedRectangle(cornerRadius: 14)
                                 .stroke(DropFramePalette.hairline, lineWidth: 1)

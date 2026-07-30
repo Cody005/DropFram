@@ -154,6 +154,64 @@ actor LibraryStore {
         }
     }
 
+    func move(_ video: LibraryVideo, toFolderID destinationFolderID: UUID) throws -> LibraryVideo {
+        guard video.folderID != destinationFolderID else {
+            return video
+        }
+
+        var movedVideo = video
+
+        // AVFoundation owns the physical location of an offline HLS package.
+        // Reassign its collection metadata without relocating the package.
+        if let localPath = video.localPath, !localPath.isEmpty {
+            let packageURL = localURL(for: video)
+            guard
+                packageURL.pathExtension.lowercased() == "movpkg",
+                fileManager.fileExists(atPath: packageURL.path)
+            else {
+                throw DropFrameError.moveFailed
+            }
+            movedVideo.folderID = destinationFolderID
+            return movedVideo
+        }
+
+        try createDirectoriesIfNeeded()
+        let sourceFolderURL = mediaURL
+            .appending(path: video.folderID.uuidString, directoryHint: .isDirectory)
+            .standardizedFileURL
+        let sourceURL = sourceFolderURL
+            .appending(path: video.localFilename)
+            .standardizedFileURL
+        let destinationFolderURL = mediaURL
+            .appending(path: destinationFolderID.uuidString, directoryHint: .isDirectory)
+            .standardizedFileURL
+        let destinationURL = destinationFolderURL
+            .appending(path: video.localFilename)
+            .standardizedFileURL
+
+        guard
+            sourceURL.deletingLastPathComponent() == sourceFolderURL,
+            destinationURL.deletingLastPathComponent() == destinationFolderURL,
+            fileManager.fileExists(atPath: sourceURL.path),
+            !fileManager.fileExists(atPath: destinationURL.path)
+        else {
+            throw DropFrameError.moveFailed
+        }
+
+        do {
+            try fileManager.createDirectory(
+                at: destinationFolderURL,
+                withIntermediateDirectories: true
+            )
+            try fileManager.moveItem(at: sourceURL, to: destinationURL)
+        } catch {
+            throw DropFrameError.moveFailed
+        }
+
+        movedVideo.folderID = destinationFolderID
+        return movedVideo
+    }
+
     func persistentPath(for downloadedPackageURL: URL) -> String {
         let packageURL = downloadedPackageURL.standardizedFileURL
         let homeURL = URL(

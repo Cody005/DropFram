@@ -132,7 +132,7 @@ private struct HeroGraphic: View {
         Image("HeroCutout", bundle: .main)
             .resizable()
             .scaledToFit()
-            .frame(width: 200, height: 246)
+            .frame(width: 210, height: 256)
             .offset(x: 77, y: 5)
             .accessibilityHidden(true)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -11,7 +11,9 @@ struct QueueView: View {
                         eyebrow: "Local transfer desk",
                         title: "Download queue",
                         trailingSymbol: "arrow.clockwise",
-                        action: {}
+                        action: {},
+                        foreground: DropFramePalette.paper,
+                        eyebrowColor: DropFramePalette.paper.opacity(0.72)
                     )
 
                     if model.jobs.isEmpty {
@@ -29,7 +31,10 @@ struct QueueView: View {
                 .padding(.bottom, 28)
             }
             .scrollIndicators(.hidden)
-            .background(DropFramePalette.downloadsCanvas.ignoresSafeArea())
+            .background(
+                DropFramePageCanvas(theme: .downloads)
+                    .ignoresSafeArea()
+            )
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -162,6 +167,6 @@ private struct QueueFootnote: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
-        .background(DropFramePalette.cobalt.opacity(0.08), in: .rect(cornerRadius: 15))
+        .background(DropFramePalette.paper, in: .rect(cornerRadius: 15))
     }
 }

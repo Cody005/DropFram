@@ -13,7 +13,9 @@ struct SettingsView: View {
                         eyebrow: "Tune the machine",
                         title: "Settings",
                         trailingSymbol: "checkmark",
-                        action: { model.saveSettings() }
+                        action: { model.saveSettings() },
+                        foreground: DropFramePalette.paper,
+                        eyebrowColor: DropFramePalette.paper.opacity(0.72)
                     )
 
                     SettingsSection(index: "01", title: "On-device resolver") {
@@ -42,7 +44,7 @@ struct SettingsView: View {
 
                         Text("DropFrame can inspect direct video links and webpages that expose standard MP4, MOV, M4V, or HLS media. DRM and private streams remain protected.")
                             .font(.system(size: 11, weight: .medium, design: .rounded))
-                            .foregroundStyle(DropFramePalette.muted)
+                            .foregroundStyle(DropFramePalette.paper)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
@@ -84,7 +86,10 @@ struct SettingsView: View {
                 .padding(.bottom, 28)
             }
             .scrollIndicators(.hidden)
-            .background(DropFramePalette.settingsCanvas.ignoresSafeArea())
+            .background(
+                DropFramePageCanvas(theme: .settings)
+                    .ignoresSafeArea()
+            )
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: model.settings) {
                 model.saveSettings()
@@ -101,7 +106,12 @@ private struct SettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
-            SectionTitle(index: index, title: title)
+            SectionTitle(
+                index: index,
+                title: title,
+                indexColor: DropFramePalette.signal,
+                titleColor: DropFramePalette.paper
+            )
             content
         }
     }

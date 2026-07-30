@@ -23,7 +23,13 @@ struct LibraryView: View {
                     LibraryStatsCard()
 
                     VStack(alignment: .leading, spacing: 14) {
-                        SectionTitle(index: "01", title: "Collections", trailing: "\(model.folders.count) TOTAL")
+                        SectionTitle(
+                            index: "01",
+                            title: "Collections",
+                            trailing: "\(model.folders.count) TOTAL",
+                            indexColor: DropFramePalette.cobalt,
+                            trailingColor: DropFramePalette.ink.opacity(0.62)
+                        )
                         LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(model.folders) { folder in
                                 NavigationLink(value: folder) {
@@ -37,12 +43,14 @@ struct LibraryView: View {
                         }
                     }
 
-                    if !model.videos.isEmpty {
+                    if let latestVideo = model.videos.first {
                         VStack(alignment: .leading, spacing: 14) {
-                            SectionTitle(index: "02", title: "Latest drops")
-                            ForEach(model.videos.prefix(6)) { video in
-                                VideoRow(video: video)
-                            }
+                            SectionTitle(
+                                index: "02",
+                                title: "Latest drop",
+                                indexColor: DropFramePalette.cobalt
+                            )
+                            VideoRow(video: latestVideo)
                         }
                     }
                 }
@@ -51,7 +59,10 @@ struct LibraryView: View {
                 .padding(.bottom, 28)
             }
             .scrollIndicators(.hidden)
-            .background(DropFramePalette.libraryCanvas.ignoresSafeArea())
+            .background(
+                DropFramePageCanvas(theme: .library)
+                    .ignoresSafeArea()
+            )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: MediaFolder.self) { folder in
                 FolderDetailView(folder: folder)
@@ -348,6 +359,7 @@ private struct FolderColorway {
 struct VideoRow: View {
     @Environment(AppModel.self) private var model
     @State private var isDeleteConfirmationPresented = false
+    @State private var isMovePresented = false
     let video: LibraryVideo
 
     var body: some View {
@@ -386,6 +398,9 @@ struct VideoRow: View {
                 Button("Play", systemImage: "play.fill") {
                     model.play(video)
                 }
+                Button("Move to folder", systemImage: "folder") {
+                    isMovePresented = true
+                }
                 Button("Delete video", systemImage: "trash", role: .destructive) {
                     isDeleteConfirmationPresented = true
                 }
@@ -400,6 +415,12 @@ struct VideoRow: View {
         }
         .padding(10)
         .background(DropFramePalette.paper, in: .rect(cornerRadius: 15))
+        .sheet(isPresented: $isMovePresented) {
+            MoveVideoSheet(video: video)
+                .environment(model)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .confirmationDialog(
             "Delete this video?",
             isPresented: $isDeleteConfirmationPresented,
@@ -426,5 +447,107 @@ struct VideoRow: View {
                             .frame(width: 30, height: 30)
                             .background(DropFramePalette.night.opacity(0.74), in: .circle)
                     }
+    }
+}
+
+private struct MoveVideoSheet: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var movingFolderID: UUID?
+    let video: LibraryVideo
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: 11) {
+                    ForEach(model.folders) { folder in
+                        destinationButton(for: folder)
+                    }
+                }
+                .padding(18)
+            }
+            .background(
+                DropFramePageCanvas(theme: .library)
+                    .ignoresSafeArea()
+            )
+            .navigationTitle("Move to folder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func destinationButton(for folder: MediaFolder) -> some View {
+        let isCurrentFolder = folder.id == video.folderID
+        let isMovingHere = movingFolderID == folder.id
+
+        return Button {
+            movingFolderID = folder.id
+            Task {
+                let didMove = await model.move(video, to: folder)
+                movingFolderID = nil
+                if didMove {
+                    dismiss()
+                }
+            }
+        } label: {
+            HStack(spacing: 13) {
+                Image(systemName: folder.symbol)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(DropFramePalette.ink)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        Color(hex: folder.tintHex),
+                        in: .rect(cornerRadius: 12)
+                    )
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(folder.name)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                    Text(isCurrentFolder ? "Current folder" : "\(model.videos(in: folder).count) videos")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(DropFramePalette.muted)
+                }
+
+                Spacer()
+
+                if isMovingHere {
+                    ProgressView()
+                        .tint(DropFramePalette.cobalt)
+                } else {
+                    Image(systemName: isCurrentFolder ? "checkmark.circle.fill" : "arrow.right.circle.fill")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(
+                            isCurrentFolder
+                                ? DropFramePalette.mint
+                                : DropFramePalette.cobalt
+                        )
+                }
+            }
+            .foregroundStyle(DropFramePalette.ink)
+            .padding(13)
+            .background(DropFramePalette.paper, in: .rect(cornerRadius: 15))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(
+                        isCurrentFolder
+                            ? DropFramePalette.mint
+                            : DropFramePalette.hairline,
+                        lineWidth: isCurrentFolder ? 2 : 1
+                    )
+            }
+        }
+        .buttonStyle(.pressable)
+        .disabled(isCurrentFolder || movingFolderID != nil)
+        .accessibilityHint(
+            isCurrentFolder
+                ? "This video is already in this folder."
+                : "Moves the video into this folder."
+        )
     }
 }

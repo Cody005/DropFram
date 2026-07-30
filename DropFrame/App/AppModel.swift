@@ -136,6 +136,30 @@ final class AppModel {
         }
     }
 
+    @discardableResult
+    func move(_ video: LibraryVideo, to folder: MediaFolder) async -> Bool {
+        guard video.folderID != folder.id else { return true }
+
+        do {
+            let movedVideo = try await store.move(
+                video,
+                toFolderID: folder.id
+            )
+            guard let index = videos.firstIndex(where: { $0.id == video.id }) else {
+                return false
+            }
+            videos[index] = movedVideo
+            if playerVideo?.id == video.id {
+                playerVideo = movedVideo
+            }
+            await persist()
+            return true
+        } catch {
+            presentedError = error.localizedDescription
+            return false
+        }
+    }
+
     private func replace(_ job: DownloadJob) {
         guard let index = jobs.firstIndex(where: { $0.id == job.id }) else { return }
         jobs[index] = job

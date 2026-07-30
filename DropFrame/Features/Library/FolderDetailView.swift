@@ -23,7 +23,10 @@ struct FolderDetailView: View {
             }
             .padding(18)
         }
-        .background(DropFramePalette.libraryCanvas.ignoresSafeArea())
+        .background(
+            DropFramePageCanvas(theme: .library)
+                .ignoresSafeArea()
+        )
         .navigationTitle(folder.name)
         .navigationBarTitleDisplayMode(.inline)
     }

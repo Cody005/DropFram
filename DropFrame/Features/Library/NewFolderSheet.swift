@@ -89,7 +89,10 @@ struct NewFolderSheet: View {
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding(18)
-            .background(DropFramePalette.libraryCanvas.ignoresSafeArea())
+            .background(
+                DropFramePageCanvas(theme: .library)
+                    .ignoresSafeArea()
+            )
             .navigationTitle("New collection")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { isNameFocused = true }
