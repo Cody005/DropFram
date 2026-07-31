@@ -4,6 +4,7 @@ import UIKit
 @main
 struct DropFrameApp: App {
     @State private var model = AppModel()
+    @State private var appLock = AppLockController()
 
     init() {
         PythonRuntimeBootstrap.configure()
@@ -12,8 +13,9 @@ struct DropFrameApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            SecuredRootView()
                 .environment(model)
+                .environment(appLock)
                 .preferredColorScheme(.light)
         }
     }

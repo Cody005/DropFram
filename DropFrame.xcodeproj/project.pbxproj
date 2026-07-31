@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		06918C697560F76AE8E730A5 /* QueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7A82DDBB5006C7808C4361 /* QueueView.swift */; };
+		06A6B41C777D4BC5A8F3BE11 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6B41D777D4BC5A8F3BE11 /* PlaybackController.swift */; };
+		06A6B41E777D4BC5A8F3BE11 /* PlayerChromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6B41F777D4BC5A8F3BE11 /* PlayerChromeView.swift */; };
+		06A6B420777D4BC5A8F3BE11 /* PlayerSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6B421777D4BC5A8F3BE11 /* PlayerSupport.swift */; };
+		06A6B422777D4BC5A8F3BE11 /* PlayerTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6B423777D4BC5A8F3BE11 /* PlayerTimelineView.swift */; };
+		06A6B424777D4BC5A8F3BE11 /* PlayerInteractionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A6B425777D4BC5A8F3BE11 /* PlayerInteractionView.swift */; };
 		0A94A4E777792DB63492FE28 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ED38871C4ECD1A978C20BE8A /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		327071E3301906A9AF29569B /* DropFramePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD173AD825C32E497CAFD211 /* DropFramePalette.swift */; };
 		35670ABE43D0F9C01786DF2E /* CompanionMediaResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943143E18A674AF1D8FA236C /* CompanionMediaResolver.swift */; };
@@ -27,6 +32,7 @@
 		A16C8253888918CC056617C0 /* MediaResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E157E2F229640B98ECA17A /* MediaResolver.swift */; };
 		A3CDC063EA64E7EC256A75D4 /* EmbeddedPlayerSourceStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B64CC18F5B36967B7AD8A4 /* EmbeddedPlayerSourceStrategy.swift */; };
 		A53F60C380DFDAA72EDEDE8E /* FormatPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C0F21F64A11A4B0C6211AA /* FormatPickerSheet.swift */; };
+		A91C7F019A4B4A61B3D51E20 /* AppLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C7F029A4B4A61B3D51E20 /* AppLockView.swift */; };
 		B8A478BCFE55FB166304E28E /* DropFrameTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23E6A4522B0A2B900BFCBE5 /* DropFrameTabBar.swift */; };
 		BF576C00522E33115CD8F599 /* SectionTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F68F6962F9BB8023C08DDFCB /* SectionTitle.swift */; };
 		D0F30216A93A4AA5F8F41062 /* NewFolderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A14408DA81FB02BC34BB9C /* NewFolderSheet.swift */; };
@@ -54,6 +60,11 @@
 
 /* Begin PBXFileReference section */
 		026EDC2F15BDC8B4808DA673 /* PlayerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerScreen.swift; sourceTree = "<group>"; };
+		06A6B41D777D4BC5A8F3BE11 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
+		06A6B41F777D4BC5A8F3BE11 /* PlayerChromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerChromeView.swift; sourceTree = "<group>"; };
+		06A6B421777D4BC5A8F3BE11 /* PlayerSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSupport.swift; sourceTree = "<group>"; };
+		06A6B423777D4BC5A8F3BE11 /* PlayerTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerTimelineView.swift; sourceTree = "<group>"; };
+		06A6B425777D4BC5A8F3BE11 /* PlayerInteractionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInteractionView.swift; sourceTree = "<group>"; };
 		0E91394DFC534AEC8CAF8AE7 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaModels.swift; sourceTree = "<group>"; };
 		161CB421F320E4894F7A82A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2649348060B01CB47481F492 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -72,6 +83,7 @@
 		982707DE882DCBBBD82399A2 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		99C0F21F64A11A4B0C6211AA /* FormatPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatPickerSheet.swift; sourceTree = "<group>"; };
 		9C23B323B02C260FA251E877 /* PythonRuntimeBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonRuntimeBootstrap.swift; sourceTree = "<group>"; };
+		A91C7F029A4B4A61B3D51E20 /* AppLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockView.swift; sourceTree = "<group>"; };
 		AAAA7928AF1BCEF7135387CA /* DropFrame.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DropFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE8143FF3F4EA1EEAB4CD6E3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CD173AD825C32E497CAFD211 /* DropFramePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropFramePalette.swift; sourceTree = "<group>"; };
@@ -156,6 +168,7 @@
 				01465DFFB011DE76BC42A584 /* Library */,
 				A831B2F9151EBB670E9BE468 /* Player */,
 				1E415FB29763E4F4FE2CB53D /* Queue */,
+				A91C7F039A4B4A61B3D51E20 /* Security */,
 				666BA6AC51985B33A14A4151 /* Settings */,
 			);
 			path = Features;
@@ -210,10 +223,23 @@
 		A831B2F9151EBB670E9BE468 /* Player */ = {
 			isa = PBXGroup;
 			children = (
+				06A6B41D777D4BC5A8F3BE11 /* PlaybackController.swift */,
+				06A6B41F777D4BC5A8F3BE11 /* PlayerChromeView.swift */,
+				06A6B425777D4BC5A8F3BE11 /* PlayerInteractionView.swift */,
 				75B5E7C4FF806A8D92191F7D /* PlayerLayerView.swift */,
 				026EDC2F15BDC8B4808DA673 /* PlayerScreen.swift */,
+				06A6B421777D4BC5A8F3BE11 /* PlayerSupport.swift */,
+				06A6B423777D4BC5A8F3BE11 /* PlayerTimelineView.swift */,
 			);
 			path = Player;
+			sourceTree = "<group>";
+		};
+		A91C7F039A4B4A61B3D51E20 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				A91C7F029A4B4A61B3D51E20 /* AppLockView.swift */,
+			);
+			path = Security;
 			sourceTree = "<group>";
 		};
 		A998228250D22008BEE1D9BD /* DesignSystem */ = {
@@ -361,6 +387,7 @@
 				537C40EE1FE9F21CED318500 /* FolderDetailView.swift in Sources */,
 				A53F60C380DFDAA72EDEDE8E /* FormatPickerSheet.swift in Sources */,
 				E9E711DD3DCD63EFA6650E37 /* HomeView.swift in Sources */,
+				A91C7F019A4B4A61B3D51E20 /* AppLockView.swift in Sources */,
 				D12C160FB9F4ACB7CB8746B4 /* LibraryStore.swift in Sources */,
 				59413B20363E9E65CB421BB8 /* LibraryView.swift in Sources */,
 				41993365396A7C89D03DCEBD /* MediaDownloadService.swift in Sources */,
@@ -368,8 +395,13 @@
 				A16C8253888918CC056617C0 /* MediaResolver.swift in Sources */,
 				D0F30216A93A4AA5F8F41062 /* NewFolderSheet.swift in Sources */,
 				73BCD6BEFCE310D28C166334 /* OfflineAdaptiveDownload.swift in Sources */,
+				06A6B41C777D4BC5A8F3BE11 /* PlaybackController.swift in Sources */,
+				06A6B41E777D4BC5A8F3BE11 /* PlayerChromeView.swift in Sources */,
+				06A6B424777D4BC5A8F3BE11 /* PlayerInteractionView.swift in Sources */,
 				F43376EFAB6CBC9F693C77D6 /* PlayerLayerView.swift in Sources */,
 				9007770DB436EEA2A62E028C /* PlayerScreen.swift in Sources */,
+				06A6B420777D4BC5A8F3BE11 /* PlayerSupport.swift in Sources */,
+				06A6B422777D4BC5A8F3BE11 /* PlayerTimelineView.swift in Sources */,
 				E092090B73E88801F5265DEC /* PythonRuntimeBootstrap.swift in Sources */,
 				06918C697560F76AE8E730A5 /* QueueView.swift in Sources */,
 				E3959DF442E419C5AF7F99AB /* RootView.swift in Sources */,

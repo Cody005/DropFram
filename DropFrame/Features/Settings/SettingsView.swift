@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(AppLockController.self) private var appLock
+
+    @State private var isUpdatingAppLock = false
 
     var body: some View {
         @Bindable var model = model
@@ -18,7 +21,17 @@ struct SettingsView: View {
                         eyebrowColor: DropFramePalette.paper.opacity(0.72)
                     )
 
-                    SettingsSection(index: "01", title: "On-device resolver") {
+                    SettingsSection(index: "01", title: "Private vault") {
+                        AppLockSettingsCard(
+                            isEnabled: model.settings.appLockEnabled,
+                            isUpdating: isUpdatingAppLock,
+                            authenticationName: appLock.authenticationMethodName,
+                            onToggle: setAppLockEnabled,
+                            onLockNow: lockNow
+                        )
+                    }
+
+                    SettingsSection(index: "02", title: "On-device resolver") {
                         HStack(spacing: 13) {
                             Image(systemName: "iphone.gen3.radiowaves.left.and.right")
                                 .font(.system(size: 18, weight: .black))
@@ -48,7 +61,7 @@ struct SettingsView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    SettingsSection(index: "02", title: "Playback & transfer") {
+                    SettingsSection(index: "03", title: "Playback & transfer") {
                         SettingsToggle(
                             title: "Autoplay",
                             detail: "Start local videos immediately",
@@ -63,7 +76,7 @@ struct SettingsView: View {
                         )
                     }
 
-                    SettingsSection(index: "03", title: "Storage") {
+                    SettingsSection(index: "04", title: "Storage") {
                         HStack {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(model.storageText)
@@ -97,6 +110,36 @@ struct SettingsView: View {
         }
     }
 
+    private func setAppLockEnabled(_ enabled: Bool) {
+        guard !isUpdatingAppLock else { return }
+
+        Task { @MainActor in
+            isUpdatingAppLock = true
+            defer { isUpdatingAppLock = false }
+
+            let reason = enabled
+                ? "Confirm your identity to enable the DropFrame private vault."
+                : "Confirm your identity to turn off the DropFrame private vault."
+            let authenticated = await appLock.authenticate(reason: reason)
+            guard authenticated else {
+                model.presentedError = appLock.failureMessage
+                    ?? "DropFrame could not verify your identity."
+                return
+            }
+
+            model.settings.appLockEnabled = enabled
+            model.saveSettings()
+        }
+    }
+
+    private func lockNow() {
+        appLock.lock()
+        Task {
+            _ = await appLock.authenticate(
+                reason: "Unlock your private DropFrame video archive."
+            )
+        }
+    }
 }
 
 private struct SettingsSection<Content: View>: View {
@@ -146,6 +189,97 @@ private struct SettingsToggle: View {
     }
 }
 
+private struct AppLockSettingsCard: View {
+    let isEnabled: Bool
+    let isUpdating: Bool
+    let authenticationName: String
+    let onToggle: (Bool) -> Void
+    let onLockNow: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(DropFramePalette.cobalt)
+                    Image(systemName: isEnabled ? "faceid" : "lock.shield.fill")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(
+                            isEnabled
+                                ? DropFramePalette.mint
+                                : DropFramePalette.signal
+                        )
+                }
+                .frame(width: 48, height: 48)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(authenticationName) lock")
+                        .font(.system(size: 16, weight: .black, design: .rounded))
+                    Text(
+                        isEnabled
+                            ? "Your archive locks when DropFrame leaves the screen"
+                            : "Require biometrics or the iPhone passcode to enter"
+                    )
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(DropFramePalette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                if isUpdating {
+                    ProgressView()
+                        .tint(DropFramePalette.cobalt)
+                        .frame(width: 50)
+                } else {
+                    Toggle(
+                        "App lock",
+                        isOn: Binding(
+                            get: { isEnabled },
+                            set: onToggle
+                        )
+                    )
+                    .labelsHidden()
+                    .tint(DropFramePalette.cobalt)
+                }
+            }
+
+            if isEnabled {
+                Divider()
+                    .padding(.vertical, 14)
+
+                Button(action: onLockNow) {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                        Text("LOCK DROPFRAME NOW")
+                            .font(.system(size: 11, weight: .black, design: .monospaced))
+                            .tracking(0.5)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                    }
+                    .foregroundStyle(DropFramePalette.paper)
+                    .padding(.horizontal, 15)
+                    .frame(height: 46)
+                    .background(DropFramePalette.coral, in: .rect(cornerRadius: 13))
+                }
+                .buttonStyle(.pressable)
+            }
+        }
+        .padding(15)
+        .background(DropFramePalette.paper, in: .rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    isEnabled
+                        ? DropFramePalette.mint.opacity(0.7)
+                        : DropFramePalette.hairline,
+                    lineWidth: 1
+                )
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 private struct PrivacyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -156,7 +290,7 @@ private struct PrivacyCard: View {
                 Spacer()
                 Image(systemName: "lock.shield.fill")
             }
-            Text("Downloads stay in DropFrame’s Documents container. Only use it for media you are allowed to save; some sites protect streams or prohibit downloading.")
+            Text("Downloads stay in DropFrame’s private on-device container and the library keeps a recovery index. Only use it for media you are allowed to save; some sites protect streams or prohibit downloading.")
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -3,6 +3,36 @@ import Foundation
 struct AppSettings: Codable, Equatable, Sendable {
     var autoplay = true
     var keepScreenAwake = true
+    var appLockEnabled = false
+
+    private enum CodingKeys: String, CodingKey {
+        case autoplay
+        case keepScreenAwake
+        case appLockEnabled
+    }
+
+    init(
+        autoplay: Bool = true,
+        keepScreenAwake: Bool = true,
+        appLockEnabled: Bool = false
+    ) {
+        self.autoplay = autoplay
+        self.keepScreenAwake = keepScreenAwake
+        self.appLockEnabled = appLockEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        autoplay = try container.decodeIfPresent(Bool.self, forKey: .autoplay) ?? true
+        keepScreenAwake = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .keepScreenAwake
+        ) ?? true
+        appLockEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .appLockEnabled
+        ) ?? false
+    }
 }
 
 /// Keeps connection details independent from the media-library snapshot.

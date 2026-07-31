@@ -12,6 +12,7 @@ actor LibraryStore {
     private let mediaURL: URL
     private let thumbnailsURL: URL
     private let snapshotURL: URL
+    private let backupSnapshotURL: URL
 
     init() {
         let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -20,6 +21,7 @@ actor LibraryStore {
         mediaURL = documents.appending(path: "DropFrame Media", directoryHint: .isDirectory)
         thumbnailsURL = rootURL.appending(path: "Thumbnails", directoryHint: .isDirectory)
         snapshotURL = rootURL.appending(path: "library.json")
+        backupSnapshotURL = mediaURL.appending(path: ".dropframe-library-backup.json")
     }
 
     func load() -> LibrarySnapshot {
@@ -27,38 +29,21 @@ actor LibraryStore {
             return .starter
         }
 
-        guard
-            let data = try? Data(contentsOf: snapshotURL),
-            var snapshot = try? JSONDecoder.dropFrame.decode(LibrarySnapshot.self, from: data)
+        guard var snapshot = decodedSnapshot(at: snapshotURL)
+            ?? decodedSnapshot(at: backupSnapshotURL)
         else {
             var snapshot = LibrarySnapshot.starter
-            let recovered = recoverOrphanedDownloads()
-            snapshot.folders.insert(contentsOf: recovered.folders, at: 0)
-            snapshot.videos = recovered.videos
+            mergeOrphanedDownloads(into: &snapshot)
             try? save(snapshot)
             return snapshot
         }
 
-        let invalidVideos = snapshot.videos.filter { video in
-            let fileURL = localURL(for: video)
-            var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) else {
-                return true
-            }
-            if isDirectory.boolValue {
-                return fileURL.pathExtension.lowercased() != "movpkg"
-            }
-            let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path)
-            return ((attributes?[.size] as? NSNumber)?.int64Value ?? 0) < 4_096
-        }
-        if !invalidVideos.isEmpty {
-            for video in invalidVideos {
-                try? delete(video)
-            }
-            let invalidIDs = Set(invalidVideos.map(\.id))
-            snapshot.videos.removeAll { invalidIDs.contains($0.id) }
-            try? save(snapshot)
-        }
+        // Never destroy metadata during startup. A system-managed HLS package
+        // can be temporarily unavailable while iOS reconnects its offline
+        // asset storage. The user can still explicitly remove a missing item.
+        repairPersistentPaths(in: &snapshot)
+        mergeOrphanedDownloads(into: &snapshot)
+        try? save(snapshot)
         return snapshot
     }
 
@@ -66,6 +51,7 @@ actor LibraryStore {
         try createDirectoriesIfNeeded()
         let data = try JSONEncoder.dropFrame.encode(snapshot)
         try data.write(to: snapshotURL, options: .atomic)
+        try data.write(to: backupSnapshotURL, options: .atomic)
     }
 
     func destinationURL(folderID: UUID, title: String, extension ext: String) throws -> URL {
@@ -92,15 +78,39 @@ actor LibraryStore {
 
     func localURL(for video: LibraryVideo) -> URL {
         if let localPath = video.localPath, !localPath.isEmpty {
-            if !localPath.hasPrefix("/") {
-                return URL(
-                    fileURLWithPath: NSHomeDirectory(),
-                    isDirectory: true
-                )
-                .appending(path: localPath)
-                .standardizedFileURL
+            if let relativePath = hlsContainerRelativePath(from: localPath) {
+                let candidate = homeURL
+                    .appending(path: relativePath)
+                    .standardizedFileURL
+                if fileManager.fileExists(atPath: candidate.path) {
+                    return candidate
+                }
+
+                // iOS may rename its UserManagedAssets directory between
+                // installs while keeping the finalized package. Match the
+                // package by its stable filename instead of an old directory
+                // suffix before declaring it unavailable.
+                if let recovered = systemManagedPackageURL(
+                    named: video.localFilename
+                ) {
+                    return recovered
+                }
+
+                return candidate
             }
-            return URL(fileURLWithPath: localPath).standardizedFileURL
+
+            let absoluteURL = URL(fileURLWithPath: localPath).standardizedFileURL
+            if fileManager.fileExists(atPath: absoluteURL.path) {
+                return absoluteURL
+            }
+
+            if let recovered = systemManagedPackageURL(
+                named: video.localFilename
+            ) {
+                return recovered
+            }
+
+            return absoluteURL
         }
         return mediaURL
             .appending(path: video.folderID.uuidString, directoryHint: .isDirectory)
@@ -214,10 +224,10 @@ actor LibraryStore {
 
     func persistentPath(for downloadedPackageURL: URL) -> String {
         let packageURL = downloadedPackageURL.standardizedFileURL
-        let homeURL = URL(
-            fileURLWithPath: NSHomeDirectory(),
-            isDirectory: true
-        ).standardizedFileURL
+        if let relativePath = hlsContainerRelativePath(from: packageURL.path) {
+            return relativePath
+        }
+
         let homePrefix = homeURL.path.hasSuffix("/")
             ? homeURL.path
             : homeURL.path + "/"
@@ -269,6 +279,109 @@ actor LibraryStore {
         try fileManager.createDirectory(at: rootURL, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: mediaURL, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: thumbnailsURL, withIntermediateDirectories: true)
+    }
+
+    private var homeURL: URL {
+        URL(
+            fileURLWithPath: NSHomeDirectory(),
+            isDirectory: true
+        ).standardizedFileURL
+    }
+
+    private func hlsContainerRelativePath(from storedPath: String) -> String? {
+        if !storedPath.hasPrefix("/") {
+            return storedPath
+        }
+
+        // AVFoundation can report finalized offline packages through a
+        // transient "/.nofollow/private/var/..." URL. Persisting that literal
+        // URL works only in the callback process and buffers after relaunch.
+        // Everything from Library onward is stable inside the app container.
+        guard let libraryRange = storedPath.range(
+            of: "/Library/com.apple.UserManagedAssets"
+        ) else {
+            return nil
+        }
+
+        return String(storedPath[libraryRange.lowerBound...].dropFirst())
+    }
+
+    private func systemManagedPackageURL(named filename: String) -> URL? {
+        let libraryURL = homeURL.appending(
+            path: "Library",
+            directoryHint: .isDirectory
+        )
+        guard let directories = try? fileManager.contentsOfDirectory(
+            at: libraryURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        for directory in directories
+        where directory.lastPathComponent.hasPrefix("com.apple.UserManagedAssets") {
+            let candidate = directory
+                .appending(path: filename)
+                .standardizedFileURL
+            if fileManager.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+
+        return nil
+    }
+
+    private func repairPersistentPaths(in snapshot: inout LibrarySnapshot) {
+        for index in snapshot.videos.indices {
+            guard
+                let storedPath = snapshot.videos[index].localPath,
+                let relativePath = hlsContainerRelativePath(from: storedPath),
+                storedPath != relativePath
+            else {
+                continue
+            }
+            snapshot.videos[index].localPath = relativePath
+        }
+    }
+
+    private func decodedSnapshot(at url: URL) -> LibrarySnapshot? {
+        guard
+            let data = try? Data(contentsOf: url),
+            let snapshot = try? JSONDecoder.dropFrame.decode(
+                LibrarySnapshot.self,
+                from: data
+            )
+        else {
+            return nil
+        }
+        return snapshot
+    }
+
+    private func mergeOrphanedDownloads(into snapshot: inout LibrarySnapshot) {
+        let recovered = recoverOrphanedDownloads()
+        let indexedFiles = Set(
+            snapshot.videos.compactMap { video -> String? in
+                guard video.localPath == nil else { return nil }
+                return "\(video.folderID.uuidString)/\(video.localFilename)"
+            }
+        )
+        let missingVideos = recovered.videos.filter { video in
+            !indexedFiles.contains(
+                "\(video.folderID.uuidString)/\(video.localFilename)"
+            )
+        }
+        guard !missingVideos.isEmpty else { return }
+
+        let missingFolderIDs = Set(missingVideos.map(\.folderID))
+        let existingFolderIDs = Set(snapshot.folders.map(\.id))
+        let newFolders = recovered.folders.filter {
+            missingFolderIDs.contains($0.id) && !existingFolderIDs.contains($0.id)
+        }
+
+        snapshot.folders.insert(contentsOf: newFolders, at: 0)
+        snapshot.videos.append(contentsOf: missingVideos)
+        snapshot.videos.sort { $0.downloadedAt > $1.downloadedAt }
     }
 
     private func deleteLocalThumbnail(for video: LibraryVideo) {

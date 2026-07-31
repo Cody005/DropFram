@@ -5,11 +5,13 @@ import SwiftUI
 struct PlayerLayerView: UIViewRepresentable {
     let player: AVPlayer
     let videoGravity: AVLayerVideoGravity
+    let onPlayerLayerReady: @MainActor (AVPlayerLayer) -> Void
 
     func makeUIView(context: Context) -> PlayerUIView {
         let view = PlayerUIView()
         view.playerLayer.player = player
         view.playerLayer.videoGravity = videoGravity
+        onPlayerLayerReady(view.playerLayer)
         return view
     }
 
@@ -20,6 +22,7 @@ struct PlayerLayerView: UIViewRepresentable {
         if view.playerLayer.videoGravity != videoGravity {
             view.playerLayer.videoGravity = videoGravity
         }
+        onPlayerLayerReady(view.playerLayer)
     }
 }
 

@@ -115,7 +115,7 @@ struct LibraryVideo: Identifiable, Codable, Hashable, Sendable {
     let sourceURL: URL
     let title: String
     let localFilename: String
-    let localPath: String?
+    var localPath: String?
     let thumbnailURL: URL?
     var folderID: UUID
     let formatLabel: String

@@ -105,20 +105,6 @@ private struct EditorialDownloadHero: View {
             .frame(width: 228, alignment: .leading)
             .padding(.leading, 2)
             .zIndex(2)
-
-            Text("LOCAL\nONLY")
-                .font(.system(size: 9, weight: .black, design: .monospaced))
-                .tracking(0.8)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 9)
-                .background(HomeColors.blue, in: .capsule)
-                .rotationEffect(.degrees(8))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(.trailing, 6)
-                .padding(.bottom, 21)
-                .zIndex(3)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 306)
@@ -129,12 +115,24 @@ private struct EditorialDownloadHero: View {
 
 private struct HeroGraphic: View {
     var body: some View {
-        Image("HeroCutout", bundle: .main)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 210, height: 256)
-            .offset(x: 77, y: 5)
-            .accessibilityHidden(true)
+        VStack(spacing: -27) {
+            Image("HeroCutout", bundle: .main)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 220, height: 270)
+                .accessibilityHidden(true)
+
+            Text("LOCAL ONLY")
+                .font(.system(size: 8, weight: .black, design: .monospaced))
+                .tracking(0.8)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(HomeColors.blue, in: .capsule)
+                .rotationEffect(.degrees(4))
+                .offset(x: 31)
+        }
+        .offset(x: 72)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
