@@ -169,19 +169,21 @@ struct SecuredRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var privacyShieldVisible = false
+    private var shouldBlockContent: Bool {
+        shouldShowLock
+    }
 
     private var shouldShowLock: Bool {
         model.settings.appLockEnabled
-            && (appLock.isLocked || privacyShieldVisible)
+            && scenePhase == .active
+            && appLock.isLocked
     }
 
     var body: some View {
         ZStack {
             RootView()
-                .allowsHitTesting(!shouldShowLock)
-                .accessibilityHidden(shouldShowLock)
-                .privacySensitive()
+                .allowsHitTesting(!shouldBlockContent)
+                .accessibilityHidden(shouldBlockContent)
 
             if shouldShowLock {
                 AppLockView(controller: appLock)
@@ -209,7 +211,6 @@ struct SecuredRootView: View {
         .onChange(of: model.settings.appLockEnabled) { _, enabled in
             if !enabled {
                 appLock.unlockWithoutAuthentication()
-                privacyShieldVisible = false
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -222,14 +223,13 @@ struct SecuredRootView: View {
 
         switch phase {
         case .inactive:
-            // Hide the archive in the app-switcher snapshot without cancelling
-            // an active system Face ID prompt.
-            dismissSensitivePresentations()
-            privacyShieldVisible = true
+            // Keep the current screen in place during system overlays and the
+            // swipe-home transition. Authentication begins only on re-entry.
+            break
         case .background:
+            dismissSensitivePresentations()
             appLock.lock()
         case .active:
-            privacyShieldVisible = false
             guard appLock.isLocked, !appLock.isAuthenticating else { return }
             Task {
                 await authenticateForLaunch()
