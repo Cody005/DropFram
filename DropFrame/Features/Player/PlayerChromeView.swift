@@ -37,18 +37,6 @@ struct PlayerChromeView: View {
             }
             .padding(.horizontal, isLandscape ? 28 : 18)
             .padding(.vertical, isLandscape ? 14 : 12)
-            .background {
-                LinearGradient(
-                    colors: [
-                        DropFramePalette.night.opacity(0.82),
-                        .clear,
-                        DropFramePalette.night.opacity(0.92)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            }
         }
     }
 

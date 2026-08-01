@@ -55,7 +55,7 @@ private struct QueueEmptyState: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("The runway is clear.")
                     .font(.system(size: 25, weight: .black, design: .rounded))
-                Text("Paste a link on Grab, pick a quality, and the transfer will appear here.")
+                Text("Paste a link on Grab, choose a video quality or picture, and the transfer will appear here.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(DropFramePalette.ink.opacity(0.62))
             }
@@ -161,7 +161,7 @@ private struct QueueFootnote: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(DropFramePalette.cobalt)
-            Text("DropFrame automatically saves direct video files and adaptive streams in the offline format supported by iPhone.")
+            Text("DropFrame saves videos through its existing offline engine and stores public webpage images through a separate image downloader.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(DropFramePalette.muted)
                 .fixedSize(horizontal: false, vertical: true)

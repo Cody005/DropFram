@@ -35,6 +35,12 @@
 		A91C7F019A4B4A61B3D51E20 /* AppLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C7F029A4B4A61B3D51E20 /* AppLockView.swift */; };
 		B8A478BCFE55FB166304E28E /* DropFrameTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23E6A4522B0A2B900BFCBE5 /* DropFrameTabBar.swift */; };
 		BF576C00522E33115CD8F599 /* SectionTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F68F6962F9BB8023C08DDFCB /* SectionTitle.swift */; };
+		B10000000000000000000011 /* ImageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* ImageModels.swift */; };
+		B10000000000000000000012 /* ImageLinkResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ImageLinkResolver.swift */; };
+		B10000000000000000000013 /* ImageLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* ImageLibraryStore.swift */; };
+		B10000000000000000000014 /* ImageDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ImageDownloadService.swift */; };
+		B10000000000000000000015 /* ImagePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* ImagePickerSheet.swift */; };
+		B10000000000000000000016 /* ImageLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* ImageLibraryViews.swift */; };
 		D0F30216A93A4AA5F8F41062 /* NewFolderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32A14408DA81FB02BC34BB9C /* NewFolderSheet.swift */; };
 		D12C160FB9F4ACB7CB8746B4 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D48DD8E25DDDDAB08F2EB3D7 /* LibraryStore.swift */; };
 		D6C129282CA130D24E33F56F /* DropFrameApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676577846AAB4253045B23F8 /* DropFrameApp.swift */; };
@@ -86,6 +92,12 @@
 		A91C7F029A4B4A61B3D51E20 /* AppLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockView.swift; sourceTree = "<group>"; };
 		AAAA7928AF1BCEF7135387CA /* DropFrame.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DropFrame.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE8143FF3F4EA1EEAB4CD6E3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B10000000000000000000001 /* ImageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageModels.swift; sourceTree = "<group>"; };
+		B10000000000000000000002 /* ImageLinkResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLinkResolver.swift; sourceTree = "<group>"; };
+		B10000000000000000000003 /* ImageLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLibraryStore.swift; sourceTree = "<group>"; };
+		B10000000000000000000004 /* ImageDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDownloadService.swift; sourceTree = "<group>"; };
+		B10000000000000000000005 /* ImagePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerSheet.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* ImageLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLibraryViews.swift; sourceTree = "<group>"; };
 		CD173AD825C32E497CAFD211 /* DropFramePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropFramePalette.swift; sourceTree = "<group>"; };
 		D48DD8E25DDDDAB08F2EB3D7 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		D83C581724C704EC47AB9639 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -113,6 +125,7 @@
 			isa = PBXGroup;
 			children = (
 				86C2B6E7B6EE76DCC5742DC4 /* FolderDetailView.swift */,
+				B10000000000000000000006 /* ImageLibraryViews.swift */,
 				982707DE882DCBBBD82399A2 /* LibraryView.swift */,
 				32A14408DA81FB02BC34BB9C /* NewFolderSheet.swift */,
 			);
@@ -209,6 +222,9 @@
 			isa = PBXGroup;
 			children = (
 				943143E18A674AF1D8FA236C /* CompanionMediaResolver.swift */,
+				B10000000000000000000004 /* ImageDownloadService.swift */,
+				B10000000000000000000003 /* ImageLibraryStore.swift */,
+				B10000000000000000000002 /* ImageLinkResolver.swift */,
 				D48DD8E25DDDDAB08F2EB3D7 /* LibraryStore.swift */,
 				649E45D3F1A1609D579D06FB /* MediaDownloadService.swift */,
 				74E157E2F229640B98ECA17A /* MediaResolver.swift */,
@@ -264,6 +280,7 @@
 			isa = PBXGroup;
 			children = (
 				3DC44E23AEDB2A8B3294054C /* AppSettings.swift */,
+				B10000000000000000000001 /* ImageModels.swift */,
 				0E91394DFC534AEC8CAF8AE7 /* MediaModels.swift */,
 			);
 			path = Models;
@@ -274,6 +291,7 @@
 			children = (
 				99C0F21F64A11A4B0C6211AA /* FormatPickerSheet.swift */,
 				2649348060B01CB47481F492 /* HomeView.swift */,
+				B10000000000000000000005 /* ImagePickerSheet.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -388,6 +406,12 @@
 				A53F60C380DFDAA72EDEDE8E /* FormatPickerSheet.swift in Sources */,
 				E9E711DD3DCD63EFA6650E37 /* HomeView.swift in Sources */,
 				A91C7F019A4B4A61B3D51E20 /* AppLockView.swift in Sources */,
+				B10000000000000000000014 /* ImageDownloadService.swift in Sources */,
+				B10000000000000000000013 /* ImageLibraryStore.swift in Sources */,
+				B10000000000000000000016 /* ImageLibraryViews.swift in Sources */,
+				B10000000000000000000012 /* ImageLinkResolver.swift in Sources */,
+				B10000000000000000000011 /* ImageModels.swift in Sources */,
+				B10000000000000000000015 /* ImagePickerSheet.swift in Sources */,
 				D12C160FB9F4ACB7CB8746B4 /* LibraryStore.swift in Sources */,
 				59413B20363E9E65CB421BB8 /* LibraryView.swift in Sources */,
 				41993365396A7C89D03DCEBD /* MediaDownloadService.swift in Sources */,

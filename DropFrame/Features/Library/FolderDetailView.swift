@@ -4,8 +4,8 @@ struct FolderDetailView: View {
     @Environment(AppModel.self) private var model
     let folder: MediaFolder
 
-    private var videos: [LibraryVideo] {
-        model.videos(in: folder)
+    private var items: [LibraryItem] {
+        model.items(in: folder)
     }
 
     var body: some View {
@@ -13,11 +13,11 @@ struct FolderDetailView: View {
             LazyVStack(spacing: 15) {
                 folderBanner
 
-                if videos.isEmpty {
+                if items.isEmpty {
                     emptyState
                 } else {
-                    ForEach(videos) { video in
-                        VideoRow(video: video)
+                    ForEach(items) { item in
+                        LibraryItemRow(item: item)
                     }
                 }
             }
@@ -35,7 +35,7 @@ struct FolderDetailView: View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
                 EditorialLabel(text: "Personal collection", color: DropFramePalette.ink.opacity(0.52))
-                Text("\(videos.count) video\(videos.count == 1 ? "" : "s")")
+                Text("\(items.count) saved item\(items.count == 1 ? "" : "s")")
                     .font(.system(size: 30, weight: .black, design: .rounded))
             }
             Spacer()
@@ -55,7 +55,7 @@ struct FolderDetailView: View {
                 .foregroundStyle(DropFramePalette.cobalt)
             Text("This shelf is ready")
                 .font(.system(size: 21, weight: .black, design: .rounded))
-            Text("Choose this folder the next time you download a video.")
+            Text("Choose this folder the next time you download a video or image.")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(DropFramePalette.muted)
                 .multilineTextAlignment(.center)

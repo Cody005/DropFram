@@ -7,25 +7,37 @@ final class AppModel {
     var selectedTab: AppTab = .home
     var linkText = ""
     var resolvedMedia: ResolvedMedia?
+    var resolvedImagePage: ResolvedImagePage?
     var isResolving = false
+    var isResolvingImages = false
     var folders: [MediaFolder] = []
     var videos: [LibraryVideo] = []
+    var images: [LibraryImage] = []
     var jobs: [DownloadJob] = []
     var settings = AppSettings()
     var presentedError: String?
     var isResultPresented = false
+    var isImageResultPresented = false
     var playerVideo: LibraryVideo?
+    var presentedImage: LibraryImage?
 
     private let store: LibraryStore
     private let resolver: MediaResolver
     private let downloader: MediaDownloadService
+    private let imageStore: ImageLibraryStore
+    private let imageResolver: ImageLinkResolver
+    private let imageDownloader: ImageDownloadService
     @ObservationIgnored private var restoreTask: Task<Void, Never>?
 
     init() {
         let store = LibraryStore()
+        let imageStore = ImageLibraryStore()
         self.store = store
+        self.imageStore = imageStore
         resolver = MediaResolver()
         downloader = MediaDownloadService(store: store)
+        imageResolver = ImageLinkResolver()
+        imageDownloader = ImageDownloadService(store: imageStore)
         settings = AppSettingsCache.load() ?? AppSettings()
 
         restoreTask = Task { [weak self] in
@@ -35,9 +47,22 @@ final class AppModel {
 
     var storageText: String {
         ByteCountFormatter.string(
-            fromByteCount: videos.reduce(0) { $0 + $1.fileSize },
+            fromByteCount: videos.reduce(0) { $0 + $1.fileSize }
+                + images.reduce(0) { $0 + $1.fileSize },
             countStyle: .file
         )
+    }
+
+    var libraryItemCount: Int {
+        videos.count + images.count
+    }
+
+    var latestItem: LibraryItem? {
+        let latestVideo = videos.first.map(LibraryItem.video)
+        let latestImage = images.first.map(LibraryItem.image)
+        return [latestVideo, latestImage]
+            .compactMap { $0 }
+            .max { $0.downloadedAt < $1.downloadedAt }
     }
 
     func inspectLink() async {
@@ -52,6 +77,23 @@ final class AppModel {
             isResultPresented = false
             resolvedMedia = try await resolver.resolve(url, settings: settings)
             isResultPresented = true
+        } catch {
+            presentedError = error.localizedDescription
+        }
+    }
+
+    func inspectImages() async {
+        guard !isResolvingImages else { return }
+        isResolvingImages = true
+        defer { isResolvingImages = false }
+
+        do {
+            await restoreTask?.value
+            let url = try normalizedURL(from: linkText)
+            resolvedImagePage = nil
+            isImageResultPresented = false
+            resolvedImagePage = try await imageResolver.resolve(url)
+            isImageResultPresented = true
         } catch {
             presentedError = error.localizedDescription
         }
@@ -99,6 +141,39 @@ final class AppModel {
         }
     }
 
+    func download(
+        image: RemoteImageCandidate,
+        from page: ResolvedImagePage,
+        to folder: MediaFolder
+    ) async {
+        var job = DownloadJob(
+            mediaTitle: page.title,
+            formatLabel: image.fileExtension.isEmpty
+                ? "IMAGE"
+                : image.fileExtension.uppercased(),
+            phase: .downloading
+        )
+        jobs.insert(job, at: 0)
+        isImageResultPresented = false
+        selectedTab = .queue
+
+        do {
+            let savedImage = try await imageDownloader.download(
+                page: page,
+                image: image,
+                folderID: folder.id
+            )
+            images.insert(savedImage, at: 0)
+            job.phase = .finished
+            replace(job)
+            await persistImages()
+        } catch {
+            job.phase = .failed(error.localizedDescription)
+            replace(job)
+            presentedError = error.localizedDescription
+        }
+    }
+
     func createFolder(named rawName: String, symbol: String, tintHex: String) {
         let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
@@ -115,12 +190,31 @@ final class AppModel {
         videos.filter { $0.folderID == folder.id }
     }
 
+    func images(in folder: MediaFolder) -> [LibraryImage] {
+        images.filter { $0.folderID == folder.id }
+    }
+
+    func items(in folder: MediaFolder) -> [LibraryItem] {
+        let folderVideos = videos(in: folder).map(LibraryItem.video)
+        let folderImages = images(in: folder).map(LibraryItem.image)
+        return (folderVideos + folderImages)
+            .sorted { $0.downloadedAt > $1.downloadedAt }
+    }
+
     func localURL(for video: LibraryVideo) async -> URL {
         await store.localURL(for: video)
     }
 
+    func localURL(for image: LibraryImage) async -> URL {
+        await imageStore.localURL(for: image)
+    }
+
     func play(_ video: LibraryVideo) {
         playerVideo = video
+    }
+
+    func view(_ image: LibraryImage) {
+        presentedImage = image
     }
 
     func delete(_ video: LibraryVideo) async {
@@ -131,6 +225,19 @@ final class AppModel {
                 playerVideo = nil
             }
             await persist()
+        } catch {
+            presentedError = error.localizedDescription
+        }
+    }
+
+    func delete(_ image: LibraryImage) async {
+        do {
+            try await imageStore.delete(image)
+            images.removeAll { $0.id == image.id }
+            if presentedImage?.id == image.id {
+                presentedImage = nil
+            }
+            await persistImages()
         } catch {
             presentedError = error.localizedDescription
         }
@@ -153,6 +260,30 @@ final class AppModel {
                 playerVideo = movedVideo
             }
             await persist()
+            return true
+        } catch {
+            presentedError = error.localizedDescription
+            return false
+        }
+    }
+
+    @discardableResult
+    func move(_ image: LibraryImage, to folder: MediaFolder) async -> Bool {
+        guard image.folderID != folder.id else { return true }
+
+        do {
+            let movedImage = try await imageStore.move(
+                image,
+                toFolderID: folder.id
+            )
+            guard let index = images.firstIndex(where: { $0.id == image.id }) else {
+                return false
+            }
+            images[index] = movedImage
+            if presentedImage?.id == image.id {
+                presentedImage = movedImage
+            }
+            await persistImages()
             return true
         } catch {
             presentedError = error.localizedDescription
@@ -191,15 +322,41 @@ final class AppModel {
     }
 
     private func restoreLibrary() async {
-        let snapshot = await store.load()
+        async let librarySnapshot = store.load()
+        async let imageSnapshot = imageStore.load()
+        let (snapshot, restoredImages) = await (librarySnapshot, imageSnapshot)
         folders = snapshot.folders
         videos = snapshot.videos
+        images = restoredImages
+
+        let knownFolderIDs = Set(folders.map(\.id))
+        let recoveredImageFolderIDs = Set(images.map(\.folderID))
+            .subtracting(knownFolderIDs)
+        for (index, folderID) in recoveredImageFolderIDs.enumerated() {
+            folders.append(
+                MediaFolder(
+                    id: folderID,
+                    name: index == 0 ? "Recovered images" : "Recovered images \(index + 1)",
+                    symbol: "photo.stack.fill",
+                    tintHex: "9A73FF"
+                )
+            )
+        }
 
         // Prefer the independently cached copy. On the first run after this
         // migration, fall back to the settings already stored in library.json.
         settings = AppSettingsCache.load() ?? snapshot.settings
         AppSettingsCache.save(settings)
         restoreTask = nil
+
+        if !recoveredImageFolderIDs.isEmpty {
+            let repairedSnapshot = LibrarySnapshot(
+                folders: folders,
+                videos: videos,
+                settings: settings
+            )
+            try? await store.save(repairedSnapshot)
+        }
 
         for video in videos where video.fileSize <= 0 {
             refreshFileSizeLater(for: video.id)
@@ -236,6 +393,14 @@ final class AppModel {
             try await store.save(snapshot)
         } catch {
             presentedError = "DropFrame couldn’t save its library: \(error.localizedDescription)"
+        }
+    }
+
+    private func persistImages() async {
+        do {
+            try await imageStore.save(images)
+        } catch {
+            presentedError = "DropFrame couldn’t save its image library: \(error.localizedDescription)"
         }
     }
 }

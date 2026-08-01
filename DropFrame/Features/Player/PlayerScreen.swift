@@ -13,7 +13,7 @@ struct PlayerScreen: View {
             let isLandscape = proxy.size.width > proxy.size.height
 
             ZStack {
-                DropFramePalette.night
+                Color.black
                     .ignoresSafeArea()
 
                 PlayerLayerView(

@@ -14,7 +14,7 @@ struct LibraryView: View {
             ScrollView {
                 LazyVStack(spacing: 24) {
                     DropFrameHeader(
-                        eyebrow: "\(model.videos.count) saved · \(model.storageText)",
+                        eyebrow: "\(model.libraryItemCount) saved · \(model.storageText)",
                         title: "Your library",
                         trailingSymbol: "folder.badge.plus",
                         action: { isNewFolderPresented = true }
@@ -35,7 +35,7 @@ struct LibraryView: View {
                                 NavigationLink(value: folder) {
                                     FolderCard(
                                         folder: folder,
-                                        videos: model.videos(in: folder)
+                                        items: model.items(in: folder)
                                     )
                                 }
                                 .buttonStyle(.pressable)
@@ -43,14 +43,14 @@ struct LibraryView: View {
                         }
                     }
 
-                    if let latestVideo = model.videos.first {
+                    if let latestItem = model.latestItem {
                         VStack(alignment: .leading, spacing: 14) {
                             SectionTitle(
                                 index: "02",
                                 title: "Latest drop",
                                 indexColor: DropFramePalette.cobalt
                             )
-                            VideoRow(video: latestVideo)
+                            LibraryItemRow(item: latestItem)
                         }
                     }
                 }
@@ -82,7 +82,7 @@ private struct LibraryStatsCard: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            stat(value: "\(model.videos.count)", label: "VIDEOS", color: DropFramePalette.signal)
+            stat(value: "\(model.libraryItemCount)", label: "SAVES", color: DropFramePalette.signal)
             Rectangle()
                 .fill(DropFramePalette.paper.opacity(0.22))
                 .frame(width: 1, height: 54)
@@ -114,7 +114,7 @@ private struct LibraryStatsCard: View {
 
 private struct FolderCard: View {
     let folder: MediaFolder
-    let videos: [LibraryVideo]
+    let items: [LibraryItem]
 
     private var colorway: FolderColorway {
         FolderColorway(tintHex: folder.tintHex)
@@ -129,7 +129,7 @@ private struct FolderCard: View {
                         .stroke(.white.opacity(0.34), lineWidth: 1)
                 }
 
-            FolderDocumentStack(videos: videos)
+            FolderDocumentStack(items: items)
                 .padding(.horizontal, 25)
                 .padding(.bottom, 67)
 
@@ -158,7 +158,7 @@ private struct FolderCard: View {
                             .tracking(-0.35)
                             .multilineTextAlignment(.leading)
                             .lineLimit(2)
-                        Text("\(videos.count) VIDEO\(videos.count == 1 ? "" : "S")")
+                        Text("\(items.count) ITEM\(items.count == 1 ? "" : "S")")
                             .font(.system(size: 9, weight: .black, design: .monospaced))
                             .tracking(0.75)
                             .opacity(0.66)
@@ -182,7 +182,7 @@ private struct FolderCard: View {
 }
 
 private struct FolderDocumentStack: View {
-    let videos: [LibraryVideo]
+    let items: [LibraryItem]
 
     var body: some View {
         ZStack {
@@ -194,10 +194,10 @@ private struct FolderDocumentStack: View {
                 .offset(x: 22, y: 2)
 
             ForEach(
-                Array(videos.prefix(2).enumerated()),
+                Array(items.prefix(2).enumerated()),
                 id: \.element.id
-            ) { index, video in
-                AsyncThumbnail(url: video.thumbnailURL)
+            ) { index, item in
+                FolderItemPreview(item: item)
                     .frame(width: 58, height: 76)
                     .clipShape(.rect(cornerRadius: 8))
                     .overlay {
@@ -210,6 +210,21 @@ private struct FolderDocumentStack: View {
             }
         }
         .frame(height: 86)
+    }
+}
+
+private struct FolderItemPreview: View {
+    let item: LibraryItem
+
+    var body: some View {
+        VStack(spacing: 0) {
+            switch item {
+            case .video(let video):
+                AsyncThumbnail(url: video.thumbnailURL)
+            case .image(let image):
+                SavedImageThumbnail(image: image)
+            }
+        }
     }
 }
 
@@ -509,7 +524,11 @@ private struct MoveVideoSheet: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(folder.name)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                    Text(isCurrentFolder ? "Current folder" : "\(model.videos(in: folder).count) videos")
+                    Text(
+                        isCurrentFolder
+                            ? "Current folder"
+                            : "\(model.items(in: folder).count) saved items"
+                    )
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(DropFramePalette.muted)
                 }

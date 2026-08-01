@@ -23,7 +23,7 @@ private struct PlayerTouchSurface: UIViewRepresentable {
         view.isAccessibilityElement = true
         view.accessibilityTraits = .button
         view.accessibilityLabel = "Show or hide player controls"
-        view.accessibilityHint = "Double tap the left or right side to seek. Swipe vertically to adjust brightness or volume."
+        view.accessibilityHint = "Double tap the center to fit or zoom. Double tap the sides or swipe horizontally to seek. Swipe vertically to adjust brightness or volume."
         context.coordinator.installGestures(on: view)
         return view
     }
@@ -40,8 +40,11 @@ private struct PlayerTouchSurface: UIViewRepresentable {
         weak var controller: PlaybackController?
 
         private weak var touchView: UIView?
+        private weak var verticalPan: UIPanGestureRecognizer?
+        private weak var horizontalPan: UIPanGestureRecognizer?
         private var activeSide: Side?
         private var startingValue = 0.0
+        private var startingSeekPosition = 0.0
 
         init(controller: PlaybackController) {
             self.controller = controller
@@ -75,9 +78,21 @@ private struct PlayerTouchSurface: UIViewRepresentable {
             verticalPan.cancelsTouchesInView = false
             verticalPan.delegate = self
 
+            let horizontalPan = UIPanGestureRecognizer(
+                target: self,
+                action: #selector(handleHorizontalPan)
+            )
+            horizontalPan.minimumNumberOfTouches = 1
+            horizontalPan.maximumNumberOfTouches = 1
+            horizontalPan.cancelsTouchesInView = false
+            horizontalPan.delegate = self
+
+            self.verticalPan = verticalPan
+            self.horizontalPan = horizontalPan
             view.addGestureRecognizer(singleTap)
             view.addGestureRecognizer(doubleTap)
             view.addGestureRecognizer(verticalPan)
+            view.addGestureRecognizer(horizontalPan)
         }
 
         @objc
@@ -98,8 +113,16 @@ private struct PlayerTouchSurface: UIViewRepresentable {
             }
 
             controller.revealControls()
-            let isLeftSide = recognizer.location(in: view).x < view.bounds.midX
-            controller.seek(by: isLeftSide ? -10 : 10)
+            let horizontalPosition = recognizer.location(in: view).x
+                / max(view.bounds.width, 1)
+            switch horizontalPosition {
+            case ..<0.35:
+                controller.seek(by: -10)
+            case 0.65...:
+                controller.seek(by: 10)
+            default:
+                controller.toggleDisplayMode()
+            }
         }
 
         @objc
@@ -146,6 +169,43 @@ private struct PlayerTouchSurface: UIViewRepresentable {
             }
         }
 
+        @objc
+        private func handleHorizontalPan(_ recognizer: UIPanGestureRecognizer) {
+            guard
+                let controller,
+                !controller.controlsLocked,
+                let view = touchView
+            else {
+                finishHorizontalSeek()
+                return
+            }
+
+            switch recognizer.state {
+            case .began:
+                controller.beginScrubbing()
+                guard controller.isScrubbing else { return }
+                startingSeekPosition = controller.timelinePosition
+
+            case .changed:
+                guard controller.isScrubbing else { return }
+                controller.revealControls()
+                let translation = recognizer.translation(in: view).x
+                let fullWidthSeekRange = min(
+                    max(controller.duration * 0.12, 30),
+                    180
+                )
+                controller.timelinePosition = startingSeekPosition
+                    + (translation / max(view.bounds.width, 1)) * fullWidthSeekRange
+                controller.scrubPositionChanged()
+
+            case .ended, .cancelled, .failed:
+                finishHorizontalSeek()
+
+            default:
+                break
+            }
+        }
+
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
             guard
                 gestureRecognizer is UIPanGestureRecognizer,
@@ -156,7 +216,14 @@ private struct PlayerTouchSurface: UIViewRepresentable {
             }
 
             let velocity = pan.velocity(in: view)
-            return abs(velocity.y) > abs(velocity.x)
+            if pan === horizontalPan {
+                return controller?.canSeek == true
+                    && abs(velocity.x) > abs(velocity.y)
+            }
+            if pan === verticalPan {
+                return abs(velocity.y) > abs(velocity.x)
+            }
+            return true
         }
 
         func gestureRecognizer(
@@ -169,6 +236,13 @@ private struct PlayerTouchSurface: UIViewRepresentable {
         private func resetPan() {
             activeSide = nil
             startingValue = 0
+        }
+
+        private func finishHorizontalSeek() {
+            if controller?.isScrubbing == true {
+                controller?.endScrubbing()
+            }
+            startingSeekPosition = 0
         }
     }
 

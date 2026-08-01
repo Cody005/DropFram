@@ -27,8 +27,18 @@ struct RootView: View {
                     .environment(model)
             }
         }
+        .sheet(isPresented: $model.isImageResultPresented) {
+            if let page = model.resolvedImagePage {
+                ImagePickerSheet(page: page)
+                    .environment(model)
+            }
+        }
         .fullScreenCover(item: $model.playerVideo) { video in
             PlayerScreen(video: video)
+                .environment(model)
+        }
+        .fullScreenCover(item: $model.presentedImage) { image in
+            SavedImageViewer(image: image)
                 .environment(model)
         }
     }

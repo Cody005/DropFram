@@ -140,6 +140,7 @@ private struct HeroGraphic: View {
 private struct URLDownloadDesk: View {
     @Environment(AppModel.self) private var model
     @FocusState private var isLinkFocused: Bool
+    @State private var grabKind: GrabKind = .video
 
     var body: some View {
         @Bindable var model = model
@@ -153,11 +154,15 @@ private struct URLDownloadDesk: View {
                     .background(HomeColors.yellow, in: .capsule)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("PASTE THE VIDEO LINK")
+                    Text(grabKind == .video ? "PASTE THE VIDEO LINK" : "PASTE THE IMAGE LINK")
                         .font(.system(size: 17, weight: .black))
                         .fontWidth(.condensed)
                         .tracking(0.2)
-                    Text("A webpage or a direct media address")
+                    Text(
+                        grabKind == .video
+                            ? "A webpage or a direct media address"
+                            : "A picture page or direct image address"
+                    )
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.68))
                 }
@@ -170,12 +175,19 @@ private struct URLDownloadDesk: View {
                     .foregroundStyle(HomeColors.mint)
             }
 
+            GrabKindSelector(selection: $grabKind)
+
             HStack(spacing: 10) {
                 Image(systemName: "link")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(HomeColors.blue)
 
-                TextField("https://website.com/video", text: $model.linkText)
+                TextField(
+                    grabKind == .video
+                        ? "https://website.com/video"
+                        : "https://website.com/picture",
+                    text: $model.linkText
+                )
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(HomeColors.inkBlue)
                     .tint(HomeColors.coral)
@@ -184,7 +196,7 @@ private struct URLDownloadDesk: View {
                     .autocorrectionDisabled()
                     .focused($isLinkFocused)
                     .submitLabel(.go)
-                    .onSubmit(inspectLink)
+                    .onSubmit(fetchLink)
 
                 PasteButton(payloadType: String.self) { values in
                     guard let value = values.first else { return }
@@ -206,17 +218,21 @@ private struct URLDownloadDesk: View {
                     )
             }
 
-            Button(action: inspectLink) {
+            Button(action: fetchLink) {
                 HStack(spacing: 10) {
-                    if model.isResolving {
+                    if isBusy {
                         ProgressView()
                             .tint(HomeColors.inkBlue)
                     } else {
-                        Image(systemName: "arrow.down.to.line.compact")
+                        Image(
+                            systemName: grabKind == .video
+                                ? "arrow.down.to.line.compact"
+                                : "photo.badge.arrow.down.fill"
+                        )
                             .font(.system(size: 18, weight: .black))
                     }
 
-                    Text(model.isResolving ? "FETCHING VIDEO…" : "FETCH VIDEO")
+                    Text(buttonTitle)
                     Spacer()
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.system(size: 22, weight: .black))
@@ -229,9 +245,13 @@ private struct URLDownloadDesk: View {
                 .frame(height: 56)
             }
             .buttonStyle(YellowDepthButtonStyle())
-            .disabled(model.isResolving)
+            .disabled(isBusy)
 
-            Text("QUALITY CHOOSER  •  THUMBNAIL  •  OFFLINE SAVE")
+            Text(
+                grabKind == .video
+                    ? "QUALITY CHOOSER  •  THUMBNAIL  •  OFFLINE SAVE"
+                    : "ORIGINAL IMAGE  •  FOLDER PICKER  •  OFFLINE SAVE"
+            )
                 .font(.system(size: 8, weight: .bold, design: .monospaced))
                 .tracking(0.55)
                 .foregroundStyle(.white.opacity(0.54))
@@ -255,14 +275,64 @@ private struct URLDownloadDesk: View {
         model.linkText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func inspectLink() {
-        guard !model.isResolving else { return }
+    private var isBusy: Bool {
+        model.isResolving || model.isResolvingImages
+    }
+
+    private var buttonTitle: String {
+        if grabKind == .video {
+            return model.isResolving ? "FETCHING VIDEO…" : "FETCH VIDEO"
+        }
+        return model.isResolvingImages ? "FINDING IMAGES…" : "FETCH IMAGES"
+    }
+
+    private func fetchLink() {
+        guard !isBusy else { return }
         guard !trimmedLinkIsEmpty else {
             isLinkFocused = true
             return
         }
         isLinkFocused = false
-        Task { await model.inspectLink() }
+        switch grabKind {
+        case .video:
+            Task { await model.inspectLink() }
+        case .image:
+            Task { await model.inspectImages() }
+        }
+    }
+}
+
+private struct GrabKindSelector: View {
+    @Binding var selection: GrabKind
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(GrabKind.allCases) { kind in
+                Button {
+                    withAnimation(.smooth(duration: 0.2)) {
+                        selection = kind
+                    }
+                } label: {
+                    Label(kind.title, systemImage: kind.symbol)
+                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 35)
+                        .foregroundStyle(
+                            selection == kind ? HomeColors.inkBlue : .white.opacity(0.68)
+                        )
+                        .background(
+                            selection == kind ? HomeColors.mint : .clear,
+                            in: .rect(cornerRadius: 10)
+                        )
+                }
+                .buttonStyle(.pressable)
+                .accessibilityAddTraits(selection == kind ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(HomeColors.inkBlue.opacity(0.24), in: .rect(cornerRadius: 13))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Download type")
     }
 }
 
