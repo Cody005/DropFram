@@ -169,14 +169,20 @@ struct SecuredRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var isLockRequired: Bool {
+        model.settings.appLockEnabled && appLock.isLocked
+    }
+
     private var shouldBlockContent: Bool {
-        shouldShowLock
+        isLockRequired
     }
 
     private var shouldShowLock: Bool {
-        model.settings.appLockEnabled
-            && scenePhase == .active
-            && appLock.isLocked
+        isLockRequired && scenePhase == .active
+    }
+
+    private var shouldShowPrivacyShield: Bool {
+        isLockRequired && scenePhase != .active
     }
 
     var body: some View {
@@ -184,6 +190,11 @@ struct SecuredRootView: View {
             RootView()
                 .allowsHitTesting(!shouldBlockContent)
                 .accessibilityHidden(shouldBlockContent)
+
+            if shouldShowPrivacyShield {
+                AppPrivacyShield()
+                    .zIndex(90)
+            }
 
             if shouldShowLock {
                 AppLockView(controller: appLock)
@@ -249,6 +260,58 @@ struct SecuredRootView: View {
         model.playerVideo = nil
         model.isResultPresented = false
         model.presentedError = nil
+    }
+}
+
+private struct AppPrivacyShield: View {
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                Color(hex: "12366A")
+                    .ignoresSafeArea()
+
+                CyberGrid()
+                    .opacity(0.18)
+                    .ignoresSafeArea()
+
+                Circle()
+                    .stroke(DropFramePalette.signal.opacity(0.14), lineWidth: 24)
+                    .frame(width: 210, height: 210)
+                    .offset(x: proxy.size.width * 0.43, y: -proxy.size.height * 0.42)
+
+                Capsule()
+                    .fill(DropFramePalette.coral.opacity(0.2))
+                    .frame(width: 180, height: 24)
+                    .rotationEffect(.degrees(-14))
+                    .offset(x: -proxy.size.width * 0.4, y: proxy.size.height * 0.43)
+
+                VStack(spacing: 14) {
+                    Image(systemName: "arrow.down.to.line.compact")
+                        .font(.system(size: 30, weight: .black))
+                        .foregroundStyle(DropFramePalette.night)
+                        .frame(width: 68, height: 68)
+                        .background(DropFramePalette.signal, in: .rect(cornerRadius: 19))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 19)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        }
+                        .shadow(color: .black.opacity(0.2), radius: 0, y: 6)
+
+                    VStack(spacing: 5) {
+                        Text("DROPFRAME")
+                            .font(.system(size: 29, weight: .black, design: .rounded))
+                            .tracking(0.5)
+
+                        Text("PRIVATE VIDEO VAULT")
+                            .font(.system(size: 9, weight: .black, design: .monospaced))
+                            .tracking(1.7)
+                            .foregroundStyle(.white.opacity(0.58))
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 
