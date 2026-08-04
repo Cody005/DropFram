@@ -16,9 +16,11 @@ actor MediaDownloadService {
     }
 
     private let store: LibraryStore
+    private let youtubeDownloader: YouTubeMediaDownloader
 
     init(store: LibraryStore) {
         self.store = store
+        youtubeDownloader = YouTubeMediaDownloader(store: store)
     }
 
     func download(
@@ -27,6 +29,15 @@ actor MediaDownloadService {
         folderID: UUID,
         progress: (@Sendable (Double?, Int64) -> Void)? = nil
     ) async throws -> LibraryVideo {
+        if format.id.hasPrefix("youtube-") {
+            return try await youtubeDownloader.download(
+                media: media,
+                format: format,
+                folderID: folderID,
+                progress: progress
+            )
+        }
+
         if format.isHLS {
             return try await downloadHLS(
                 media: media,

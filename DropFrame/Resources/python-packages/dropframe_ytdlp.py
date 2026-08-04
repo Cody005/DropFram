@@ -1,5 +1,6 @@
 import json
 import traceback
+from urllib.parse import urlparse
 
 
 def _string_headers(value):
@@ -13,8 +14,24 @@ def _string_headers(value):
     return headers or None
 
 
+def _is_youtube_url(value):
+    hostname = (urlparse(str(value).strip()).hostname or "").lower()
+    return (
+        hostname == "youtu.be"
+        or hostname == "youtube.com"
+        or hostname.endswith(".youtube.com")
+        or hostname == "youtube-nocookie.com"
+        or hostname.endswith(".youtube-nocookie.com")
+    )
+
+
 def resolve(download_url):
     try:
+        if _is_youtube_url(download_url):
+            from dropframe_youtube import resolve as resolve_youtube
+
+            return resolve_youtube(download_url)
+
         import yt_dlp
 
         options = {

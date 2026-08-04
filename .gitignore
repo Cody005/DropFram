@@ -12,3 +12,4 @@ Frameworks/
 DropFrame/Resources/python-packages/*
 !DropFrame/Resources/python-packages/cacert.pem
 !DropFrame/Resources/python-packages/dropframe_ytdlp.py
+!DropFrame/Resources/python-packages/dropframe_youtube.py

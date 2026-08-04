@@ -178,11 +178,11 @@ struct SecuredRootView: View {
     }
 
     private var shouldShowLock: Bool {
-        isLockRequired && scenePhase == .active
+        isLockRequired && scenePhase != .background
     }
 
     private var shouldShowPrivacyShield: Bool {
-        isLockRequired && scenePhase != .active
+        isLockRequired && scenePhase == .background
     }
 
     var body: some View {
@@ -217,7 +217,6 @@ struct SecuredRootView: View {
                 return
             }
             appLock.lock()
-            await authenticateForLaunch()
         }
         .onChange(of: model.settings.appLockEnabled) { _, enabled in
             if !enabled {
@@ -235,25 +234,19 @@ struct SecuredRootView: View {
         switch phase {
         case .inactive:
             // Keep the current screen in place during system overlays and the
-            // swipe-home transition. Authentication begins only on re-entry.
+            // swipe-home transition. The vault remains locked without prompting.
             break
         case .background:
             dismissSensitivePresentations()
             appLock.lock()
         case .active:
-            guard appLock.isLocked, !appLock.isAuthenticating else { return }
-            Task {
-                await authenticateForLaunch()
-            }
+            // Keep the vault locked until the user explicitly taps the
+            // existing Face ID button. This avoids expanding the system Face
+            // ID interface every time DropFrame becomes active.
+            break
         @unknown default:
             break
         }
-    }
-
-    private func authenticateForLaunch() async {
-        _ = await appLock.authenticate(
-            reason: "Unlock your private DropFrame video archive."
-        )
     }
 
     private func dismissSensitivePresentations() {
@@ -338,20 +331,8 @@ private struct AppLockView: View {
                 Color(hex: "12366A")
                     .ignoresSafeArea()
 
-                CyberGrid()
-                    .opacity(0.32)
+                InteractiveDotField(authenticationState: controller.visualState)
                     .ignoresSafeArea()
-
-                Circle()
-                    .stroke(DropFramePalette.signal.opacity(0.18), lineWidth: 28)
-                    .frame(width: 240, height: 240)
-                    .offset(x: proxy.size.width * 0.42, y: -proxy.size.height * 0.43)
-
-                Capsule()
-                    .fill(DropFramePalette.coral.opacity(0.28))
-                    .frame(width: 230, height: 34)
-                    .rotationEffect(.degrees(-14))
-                    .offset(x: -proxy.size.width * 0.39, y: proxy.size.height * 0.44)
 
                 if isLandscape {
                     VStack(spacing: 16) {
@@ -473,9 +454,6 @@ private struct AppLockView: View {
                 .frame(width: size * 0.93, height: size * 0.93)
                 .animation(.smooth(duration: 0.5), value: controller.visualState)
 
-            ScannerCorners(size: size * 0.67)
-                .stroke(.white.opacity(0.82), style: StrokeStyle(lineWidth: 3, lineCap: .square))
-
             Image(
                 systemName: controller.visualState == .verified
                     ? "checkmark"
@@ -587,6 +565,145 @@ private struct AppLockView: View {
     }
 }
 
+private struct InteractiveDotField: View {
+    let authenticationState: AppLockController.VisualState
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var fingerLocation = CGPoint.zero
+    @State private var fingerStrength: CGFloat = 0
+
+    var body: some View {
+        TimelineView(
+            .animation(
+                minimumInterval: reduceMotion ? 1 : 1 / 30,
+                paused: reduceMotion
+            )
+        ) { timeline in
+            Canvas { context, size in
+                drawDots(
+                    context: &context,
+                    size: size,
+                    time: timeline.date.timeIntervalSinceReferenceDate
+                )
+            }
+        }
+        .contentShape(.rect)
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if distance(from: fingerLocation, to: value.location) > 1.5 {
+                        fingerLocation = value.location
+                    }
+                    if fingerStrength < 1 {
+                        fingerStrength = 1
+                    }
+                }
+                .onEnded { _ in
+                    withAnimation(.easeOut(duration: 0.55)) {
+                        fingerStrength = 0
+                    }
+                }
+        )
+        .accessibilityHidden(true)
+    }
+
+    private func drawDots(
+        context: inout GraphicsContext,
+        size: CGSize,
+        time: TimeInterval
+    ) {
+        let spacing: CGFloat = size.width > size.height ? 21 : 19
+        let columns = Int(ceil(size.width / spacing)) + 2
+        let rows = Int(ceil(size.height / spacing)) + 2
+        let fieldOrigin = CGPoint(x: size.width * 0.5, y: size.height * 0.43)
+        let phase = reduceMotion ? 0 : CGFloat(time.truncatingRemainder(dividingBy: 120))
+
+        for row in 0..<rows {
+            for column in 0..<columns {
+                let gridX = CGFloat(column) * spacing - spacing * 0.5
+                let gridY = CGFloat(row) * spacing - spacing * 0.5
+                let seed = CGFloat(column) * 0.47 + CGFloat(row) * 0.31
+                let wave = sin(phase * 0.92 + seed)
+                let crossWave = cos(phase * 0.54 - seed * 1.37)
+
+                var point = CGPoint(
+                    x: gridX + crossWave * 1.15,
+                    y: gridY + wave * 1.65
+                )
+                var radius = 1.55 + (wave + 1) * 0.30
+                var opacity = 0.28 + (crossWave + 1) * 0.055
+
+                let originDistance = distance(from: point, to: fieldOrigin)
+                let statePulse = authenticationPulse(
+                    distance: originDistance,
+                    time: phase
+                )
+                radius += statePulse * 1.45
+                opacity += statePulse * 0.34
+
+                let touchDistance = distance(from: point, to: fingerLocation)
+                if fingerStrength > 0, touchDistance < 126 {
+                    let influence = (1 - touchDistance / 126) * fingerStrength
+                    let directionX = (point.x - fingerLocation.x) / max(touchDistance, 1)
+                    let directionY = (point.y - fingerLocation.y) / max(touchDistance, 1)
+                    point.x += directionX * influence * 24
+                    point.y += directionY * influence * 24
+                    radius += influence * 2.5
+                    opacity += influence * 0.62
+                }
+
+                let isAccentDot = (row + column * 3).isMultiple(of: 13)
+                let color = isAccentDot
+                    ? DropFramePalette.signal
+                    : stateColor
+                let dotRect = CGRect(
+                    x: point.x - radius,
+                    y: point.y - radius,
+                    width: radius * 2,
+                    height: radius * 2
+                )
+
+                context.fill(
+                    Path(ellipseIn: dotRect),
+                    with: .color(color.opacity(min(opacity, 0.92)))
+                )
+            }
+        }
+    }
+
+    private var stateColor: Color {
+        switch authenticationState {
+        case .locked:
+            .white
+        case .scanning:
+            DropFramePalette.mint
+        case .verified:
+            DropFramePalette.signal
+        case .failed:
+            DropFramePalette.coral
+        }
+    }
+
+    private func authenticationPulse(distance: CGFloat, time: CGFloat) -> CGFloat {
+        switch authenticationState {
+        case .locked:
+            return max(0, 1 - distance / 360) * 0.16
+        case .scanning:
+            let waveRadius = (time * 74).truncatingRemainder(dividingBy: 310)
+            return max(0, 1 - abs(distance - waveRadius) / 46)
+        case .verified:
+            let waveRadius = (time * 118).truncatingRemainder(dividingBy: 430)
+            return max(0, 1 - abs(distance - waveRadius) / 68)
+        case .failed:
+            return max(0, sin(time * 5.5)) * max(0, 1 - distance / 290) * 0.72
+        }
+    }
+
+    private func distance(from first: CGPoint, to second: CGPoint) -> CGFloat {
+        hypot(first.x - second.x, first.y - second.y)
+    }
+}
+
 private struct CyberGrid: View {
     var body: some View {
         Canvas { context, size in
@@ -614,34 +731,5 @@ private struct CyberGrid: View {
             )
         }
         .accessibilityHidden(true)
-    }
-}
-
-private struct ScannerCorners: Shape {
-    let size: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let originX = rect.midX - size / 2
-        let originY = rect.midY - size / 2
-        let segment = size * 0.23
-        var path = Path()
-
-        path.move(to: CGPoint(x: originX, y: originY + segment))
-        path.addLine(to: CGPoint(x: originX, y: originY))
-        path.addLine(to: CGPoint(x: originX + segment, y: originY))
-
-        path.move(to: CGPoint(x: originX + size - segment, y: originY))
-        path.addLine(to: CGPoint(x: originX + size, y: originY))
-        path.addLine(to: CGPoint(x: originX + size, y: originY + segment))
-
-        path.move(to: CGPoint(x: originX + size, y: originY + size - segment))
-        path.addLine(to: CGPoint(x: originX + size, y: originY + size))
-        path.addLine(to: CGPoint(x: originX + size - segment, y: originY + size))
-
-        path.move(to: CGPoint(x: originX + segment, y: originY + size))
-        path.addLine(to: CGPoint(x: originX, y: originY + size))
-        path.addLine(to: CGPoint(x: originX, y: originY + size - segment))
-
-        return path
     }
 }

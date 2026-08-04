@@ -8,6 +8,7 @@ protocol MediaResolving: Sendable {
 actor MediaResolver: MediaResolving {
     private let onDevice = OnDeviceMediaResolver()
     private let ytDLP = YTDLPOnDeviceResolver()
+    private let youtube = YouTubeMediaResolver()
 
     func resolve(_ url: URL) async throws -> ResolvedMedia {
         try await resolve(url, settings: AppSettings())
@@ -17,6 +18,10 @@ actor MediaResolver: MediaResolving {
         _ = settings
         if OnDeviceMediaResolver.isDirectMediaURL(url) {
             return try playableResult(from: try await onDevice.resolve(url))
+        }
+
+        if YouTubeURLMatcher.matches(url) {
+            return try playableResult(from: try await youtube.resolve(url))
         }
 
         do {

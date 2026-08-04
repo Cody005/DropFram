@@ -114,7 +114,7 @@ actor YTDLPOnDeviceResolver: MediaResolving {
 /// acquiring the GIL. A Swift actor serializes calls, but it does not guarantee
 /// that consecutive calls run on the same OS thread. Keep Python initialization,
 /// PythonObject use, and PythonObject destruction on one permanent thread.
-private final class PythonResolverWorker: @unchecked Sendable {
+final class PythonResolverWorker: @unchecked Sendable {
     static let shared = PythonResolverWorker()
 
     private struct Job {
