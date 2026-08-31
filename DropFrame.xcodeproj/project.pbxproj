@@ -21,6 +21,7 @@
 		4C945C0F5F899043A2EB65E5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE8143FF3F4EA1EEAB4CD6E3 /* SettingsView.swift */; };
 		4FC30FE8D6FEB177C61E0DBD /* YTDLPOnDeviceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2916CCE741C9254C1DB4C1 /* YTDLPOnDeviceResolver.swift */; };
 		5A2B91E74E8A4D48A107D101 /* YouTubeMediaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2B91E74E8A4D48A107D102 /* YouTubeMediaService.swift */; };
+		5A2B91E74E8A4D48A107D103 /* InstagramMediaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2B91E74E8A4D48A107D104 /* InstagramMediaService.swift */; };
 		537C40EE1FE9F21CED318500 /* FolderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C2B6E7B6EE76DCC5742DC4 /* FolderDetailView.swift */; };
 		552456D186A7BF89FE0F0360 /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = A5B1BEB0902AD86D4BA2247A /* PythonKit */; };
 		59413B20363E9E65CB421BB8 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982707DE882DCBBBD82399A2 /* LibraryView.swift */; };
@@ -81,6 +82,7 @@
 		3DC44E23AEDB2A8B3294054C /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		3E2916CCE741C9254C1DB4C1 /* YTDLPOnDeviceResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPOnDeviceResolver.swift; sourceTree = "<group>"; };
 		5A2B91E74E8A4D48A107D102 /* YouTubeMediaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMediaService.swift; sourceTree = "<group>"; };
+		5A2B91E74E8A4D48A107D104 /* InstagramMediaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramMediaService.swift; sourceTree = "<group>"; };
 		400AB3DE4D93E5D00DC1A890 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		649E45D3F1A1609D579D06FB /* MediaDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaDownloadService.swift; sourceTree = "<group>"; };
 		676577846AAB4253045B23F8 /* DropFrameApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropFrameApp.swift; sourceTree = "<group>"; };
@@ -227,6 +229,7 @@
 				B10000000000000000000004 /* ImageDownloadService.swift */,
 				B10000000000000000000003 /* ImageLibraryStore.swift */,
 				B10000000000000000000002 /* ImageLinkResolver.swift */,
+				5A2B91E74E8A4D48A107D104 /* InstagramMediaService.swift */,
 				D48DD8E25DDDDAB08F2EB3D7 /* LibraryStore.swift */,
 				649E45D3F1A1609D579D06FB /* MediaDownloadService.swift */,
 				74E157E2F229640B98ECA17A /* MediaResolver.swift */,
@@ -435,6 +438,7 @@
 				BF576C00522E33115CD8F599 /* SectionTitle.swift in Sources */,
 				4C945C0F5F899043A2EB65E5 /* SettingsView.swift in Sources */,
 				4FC30FE8D6FEB177C61E0DBD /* YTDLPOnDeviceResolver.swift in Sources */,
+				5A2B91E74E8A4D48A107D103 /* InstagramMediaService.swift in Sources */,
 				5A2B91E74E8A4D48A107D101 /* YouTubeMediaService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
